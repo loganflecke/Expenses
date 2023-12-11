@@ -50,3 +50,5 @@ Clone the repository:
 - **Visualizations:** Include graphical representations (charts, graphs) to enhance data visualization.
 
 - **Interface:** Make the interface more user friendly and persistent, perhaps through displaying it on a web browser.
+
+![usage](usage.png)
