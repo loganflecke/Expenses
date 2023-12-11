@@ -1,92 +1,118 @@
 import tkinter as tk
-from tkinter import filedialog
 import pandas as pd
 from datetime import datetime, timedelta
-import json
 import os
+import argparse
+import sys
 
-with open("config.json", "r") as config_file:
-    config_data = json.load(config_file)
+category = 'Category'
+grocery = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis']
+retailer = 'Description'
+cost = 'Debit'
+transaction_path = './Transactions'
 
-category = config_data['headers']['category']
-grocery = config_data['headers']['grocery']
-retailer = config_data['headers']['retailer']
-cost = config_data['headers']['cost']
-transaction_path = config_data['filePaths']['transactionPath']
+parser = argparse.ArgumentParser(description='Command-line arguments example')
 
-def merge_csv(input_files, output_file):
+# Add optional arguments (flags)
+parser.add_argument('-c', '--categorized', help='Categorized file path')
+parser.add_argument('-f', '--filtered', help='Filtered file path')
+parser.add_argument('-o', '--output', help='Output file path')
+
+# Parse the command-line arguments
+args = parser.parse_args()
+
+# Access the values of the flags
+categorized = args.categorized or "categorized.csv"
+filtered = args.filtered or "filtered.csv"
+combined = args.output or "combined.csv"
+
+def merge_csv(input_files, combined):
     dfs = [pd.read_csv(os.path.join(transaction_path, file)) for file in input_files]
     merged_df = pd.concat(dfs).drop_duplicates()
-    merged_df.to_csv(output_file, index=False)
+    merged_df.to_csv(combined, index=False)
     return merged_df
 
-def filter_csv_date(merged_df, output_file, filtered_output_file):
+def filter_csv_date(merged_df, combined, filtered):
     date_format = "%Y-%m-%d"
     merged_df.iloc[:, 1] = pd.to_datetime(merged_df.iloc[:, 1], format=date_format)
     cutoff_date = datetime.now() - timedelta(days=30)
     filtered_df = merged_df[merged_df.iloc[:, 1] >= cutoff_date]
-    filtered_df.to_csv(filtered_output_file, index=False)
+    filtered_df.to_csv(filtered, index=False)
     return filtered_df
 
-def filter_csv_categories(filtered_df, output_file, categorized_output_file):
-    filtered_df.loc[filtered_df[retailer].str.contains(grocery, case=False), category] = 'Grocery'
+def filter_csv_categories(filtered_df, combined, categorized):
+    filtered_df.loc[filtered_df[retailer].isin(grocery), category] = 'Grocery'
     categories_df = filtered_df.groupby(category)[cost].sum().reset_index()
-    categories_df.to_csv(categorized_output_file, index=False)
+    categories_df.to_csv(categorized, index=False)
     return categories_df
 
-def print_data(output_file, filtered_output_file, categorized_output_file, categories_df):
-    result_text.set(f"Merged CSV written to: {output_file}\n"
-                    f"Filtered CSV written to: {filtered_output_file}\n"
-                    f"Categorized CSV written to: {categorized_output_file}\n\n"
-                    f"{categories_df}")
+def print_data(combined, filtered, categorized, categories_df, filtered_df):
+    for index, row in categories_df.iterrows():
+        category_name = row[category]
+        total_cost = row[cost]
+        result_text.set(result_text.get() + f"{category_name.ljust(30)} {total_cost}\n")
+
+    result_text.set(result_text.get() + f"\nOther Transactions:\n")
+    other_df = filtered_df[filtered_df[category].str.contains('Other')]
+
+    for index, row in other_df.iterrows():
+        result_text.set(result_text.get() + f"{row[retailer].ljust(30)} {row[cost]}\n")
 
 def run_script():
     try:
         input_files = [f for f in os.listdir(transaction_path) if os.path.isfile(os.path.join(transaction_path, f))]
 
-        output_file = output_entry.get()
-        filtered_output_file = filtered_entry.get()
-        categorized_output_file = categorized_entry.get()
+        combined = output_entry.get()
+        filtered = filtered_entry.get()
+        categorized = categorized_entry.get()
 
-        merged_df = merge_csv(input_files, output_file)
-        filtered_df = filter_csv_date(merged_df, output_file, filtered_output_file)
-        categories_df = filter_csv_categories(filtered_df, output_file, categorized_output_file)
-        print_data(output_file, filtered_output_file, categorized_output_file, categories_df)
-    except FileNotFoundError:
-        result_text.set(f"Error: Configuration file 'config.json' not found.")
+        merged_df = merge_csv(input_files, combined)
+        filtered_df = filter_csv_date(merged_df, combined, filtered)
+        categories_df = filter_csv_categories(filtered_df, combined, categorized)
+        print_data(combined, filtered, categorized, categories_df, filtered_df)
     except Exception as e:
         result_text.set(f"An error occurred: {str(e)}")
 
 root = tk.Tk()
-root.title("CSV Processing Tool")
+root.title("Budget Processing Tool")
 
 result_text = tk.StringVar()
 
 frame = tk.Frame(root, padx=10, pady=10)
 frame.pack(padx=20, pady=20)
 
+transaction_label = tk.Label(frame, text="Transaction Directory Path:")
+transaction_label.grid(row=0, column=0, padx=5, pady=5)
+
+transaction_entry = tk.Entry(frame)
+transaction_entry.insert(0, transaction_path)
+transaction_entry.grid(row=0, column=1, padx=5, pady=5)
+
 output_label = tk.Label(frame, text="Output File:")
-output_label.grid(row=0, column=0, padx=5, pady=5)
+output_label.grid(row=1, column=0, padx=5, pady=5)
 
 output_entry = tk.Entry(frame)
-output_entry.grid(row=0, column=1, padx=5, pady=5)
+output_entry.insert(0, combined)
+output_entry.grid(row=1, column=1, padx=5, pady=5)
 
 filtered_label = tk.Label(frame, text="Filtered Output File:")
-filtered_label.grid(row=1, column=0, padx=5, pady=5)
+filtered_label.grid(row=2, column=0, padx=5, pady=5)
 
 filtered_entry = tk.Entry(frame)
-filtered_entry.grid(row=1, column=1, padx=5, pady=5)
+filtered_entry.insert(0, filtered)
+filtered_entry.grid(row=2, column=1, padx=5, pady=5)
 
 categorized_label = tk.Label(frame, text="Categorized Output File:")
-categorized_label.grid(row=2, column=0, padx=5, pady=5)
+categorized_label.grid(row=3, column=0, padx=5, pady=5)
 
 categorized_entry = tk.Entry(frame)
-categorized_entry.grid(row=2, column=1, padx=5, pady=5)
+categorized_entry.insert(0, categorized)
+categorized_entry.grid(row=3, column=1, padx=5, pady=5)
 
 run_button = tk.Button(frame, text="Run Script", command=run_script)
-run_button.grid(row=3, columnspan=2, pady=10)
+run_button.grid(row=4, columnspan=2, pady=10)
 
 result_label = tk.Label(frame, textvariable=result_text)
-result_label.grid(row=4, columnspan=2)
+result_label.grid(row=5, columnspan=2)
 
 root.mainloop()
