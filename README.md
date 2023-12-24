@@ -31,13 +31,14 @@ Clone the repository:
 
 ## Usage
 
-1. Run the `budget.py` file:
+1. Run the `Run` file:
 
    ```bash
-   python3 budget.py
+   chmod 555 Run
+   ./Run
    ```
 
-2. Use the GUI to specify the location of your credit card CSV files.
+2. Use the webpage to specify the location of your credit card CSV files.
 
 3. Specify the desired output file names (combined transactions, filtered for the past month, categorized spending).
 
