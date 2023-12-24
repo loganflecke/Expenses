@@ -1,0 +1,34 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Processing Tool</title>
+</head>
+<body>
+    <h2>Input / Output Files:</h2>
+    <form action="/" method="post">
+        <label for="transaction_path">Transaction Directory Path:</label>
+        <input type="text" id="transaction_path" name="transaction_path" value="{{ transaction_path }}" required>
+        <br>
+
+        <label for="output">Output File:</label>
+        <input type="text" id="output" name="output" value="{{ combined }}" required>
+        <br>
+
+        <label for="filtered">Filtered Output File:</label>
+        <input type="text" id="filtered" name="filtered" value="{{ filtered }}" required>
+        <br>
+
+        <label for="categorized">Categorized Output File:</label>
+        <input type="text" id="categorized" name="categorized" value="{{ categorized }}" required>
+        <br>
+
+        <button type="submit">Continue</button>
+    </form>
+
+    <h2>Result:</h2>
+    <pre>{{ result_text }}</pre>
+</body>
+</html>

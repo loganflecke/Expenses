@@ -1,32 +1,44 @@
-import tkinter as tk
+# budget.py
+from flask import Flask, render_template, request
 import pandas as pd
 from datetime import datetime, timedelta
 import os
-import argparse
-import sys
 
+app = Flask(__name__)
 category = 'Category'
 grocery = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis']
 retailer = 'Description'
 cost = 'Debit'
-transaction_path = './Transactions'
 
-parser = argparse.ArgumentParser(description='Command-line arguments example')
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        try:
+            transaction_path = request.form['transaction_path']
+            combined = request.form['output']
+            filtered = request.form['filtered']
+            categorized = request.form['categorized']
 
-# Add optional arguments (flags)
-parser.add_argument('-c', '--categorized', help='Categorized file path')
-parser.add_argument('-f', '--filtered', help='Filtered file path')
-parser.add_argument('-o', '--output', help='Output file path')
+            input_files = [f for f in os.listdir(transaction_path) if os.path.isfile(os.path.join(transaction_path, f))]
 
-# Parse the command-line arguments
-args = parser.parse_args()
+            merged_df = merge_csv(transaction_path, input_files, combined)
+            filtered_df = filter_csv_date(merged_df, combined, filtered)
+            categories_df = filter_csv_categories(filtered_df, combined, categorized)
+            result_text = print_data(combined, filtered, categorized, categories_df, filtered_df)
 
-# Access the values of the flags
-categorized = args.categorized or "categorized.csv"
-filtered = args.filtered or "filtered.csv"
-combined = args.output or "combined.csv"
+            return render_template('index.html', result_text=result_text, transaction_path=transaction_path,
+                                   combined=combined, filtered=filtered, categorized=categorized)
 
-def merge_csv(input_files, combined):
+        except Exception as e:
+            result_text = f"An error occurred: {str(e)}"
+            return render_template('index.html', result_text=result_text)
+    else:
+        # Default rendering for the initial page load
+        return render_template('index.html')
+
+
+
+def merge_csv(transaction_path, input_files, combined):
     dfs = [pd.read_csv(os.path.join(transaction_path, file)) for file in input_files]
     merged_df = pd.concat(dfs).drop_duplicates()
     merged_df.to_csv(combined, index=False)
@@ -47,72 +59,19 @@ def filter_csv_categories(filtered_df, combined, categorized):
     return categories_df
 
 def print_data(combined, filtered, categorized, categories_df, filtered_df):
+    result_text = ""
     for index, row in categories_df.iterrows():
-        category_name = row[category]
-        total_cost = row[cost]
-        result_text.set(result_text.get() + f"{category_name.ljust(30)} {total_cost}\n")
+        category_name = row['Category']
+        total_cost = row['Debit']
+        result_text += f"{category_name.ljust(30)} {total_cost}\n"
 
-    result_text.set(result_text.get() + f"\nOther Transactions:\n")
-    other_df = filtered_df[filtered_df[category].str.contains('Other')]
+    result_text += f"\nOther Transactions:\n"
+    other_df = filtered_df[filtered_df['Category'].str.contains('Other')]
 
     for index, row in other_df.iterrows():
-        result_text.set(result_text.get() + f"{row[retailer].ljust(30)} {row[cost]}\n")
+        result_text += f"{row['Description'].ljust(30)} {row['Debit']}\n"
 
-def run_script():
-    try:
-        input_files = [f for f in os.listdir(transaction_path) if os.path.isfile(os.path.join(transaction_path, f))]
+    return result_text
 
-        combined = output_entry.get()
-        filtered = filtered_entry.get()
-        categorized = categorized_entry.get()
-
-        merged_df = merge_csv(input_files, combined)
-        filtered_df = filter_csv_date(merged_df, combined, filtered)
-        categories_df = filter_csv_categories(filtered_df, combined, categorized)
-        print_data(combined, filtered, categorized, categories_df, filtered_df)
-    except Exception as e:
-        result_text.set(f"An error occurred: {str(e)}")
-
-root = tk.Tk()
-root.title("Budget Processing Tool")
-
-result_text = tk.StringVar()
-
-frame = tk.Frame(root, padx=10, pady=10)
-frame.pack(padx=20, pady=20)
-
-transaction_label = tk.Label(frame, text="Transaction Directory Path:")
-transaction_label.grid(row=0, column=0, padx=5, pady=5)
-
-transaction_entry = tk.Entry(frame)
-transaction_entry.insert(0, transaction_path)
-transaction_entry.grid(row=0, column=1, padx=5, pady=5)
-
-output_label = tk.Label(frame, text="Output File:")
-output_label.grid(row=1, column=0, padx=5, pady=5)
-
-output_entry = tk.Entry(frame)
-output_entry.insert(0, combined)
-output_entry.grid(row=1, column=1, padx=5, pady=5)
-
-filtered_label = tk.Label(frame, text="Filtered Output File:")
-filtered_label.grid(row=2, column=0, padx=5, pady=5)
-
-filtered_entry = tk.Entry(frame)
-filtered_entry.insert(0, filtered)
-filtered_entry.grid(row=2, column=1, padx=5, pady=5)
-
-categorized_label = tk.Label(frame, text="Categorized Output File:")
-categorized_label.grid(row=3, column=0, padx=5, pady=5)
-
-categorized_entry = tk.Entry(frame)
-categorized_entry.insert(0, categorized)
-categorized_entry.grid(row=3, column=1, padx=5, pady=5)
-
-run_button = tk.Button(frame, text="Run Script", command=run_script)
-run_button.grid(row=4, columnspan=2, pady=10)
-
-result_label = tk.Label(frame, textvariable=result_text)
-result_label.grid(row=5, columnspan=2)
-
-root.mainloop()
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=5000)
