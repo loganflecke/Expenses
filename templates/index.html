@@ -9,26 +9,22 @@
 <body>
     <h2>Input / Output Files:</h2>
     <form action="/" method="post">
+        <label for="num_days">Days:</label>
+        <input type="number" id="num_days" name="num_days" value="{{ num_days }}" required>
+        <br>
+
         <label for="transaction_path">Transaction Directory Path:</label>
         <input type="text" id="transaction_path" name="transaction_path" value="{{ transaction_path }}" required>
-        <br>
-
-        <label for="output">Output File:</label>
-        <input type="text" id="output" name="output" value="{{ combined }}" required>
-        <br>
-
-        <label for="filtered">Filtered Output File:</label>
-        <input type="text" id="filtered" name="filtered" value="{{ filtered }}" required>
-        <br>
-
-        <label for="categorized">Categorized Output File:</label>
-        <input type="text" id="categorized" name="categorized" value="{{ categorized }}" required>
         <br>
 
         <button type="submit">Continue</button>
     </form>
 
-    <h2>Result:</h2>
-    <pre>{{ result_text }}</pre>
+    <h2>Categories:</h2>
+    <pre>{{ categories_text }}</pre>
+    <h2>Transactions:</h2>
+    <pre>{{ transactions_text }}</pre>
+    <h2>Grouped By Category:</h2>
+    <pre>{{ grouped_categories }}</pre>
 </body>
 </html>

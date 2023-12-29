@@ -1,4 +1,3 @@
-# budget.py
 from flask import Flask, render_template, request
 import pandas as pd
 from datetime import datetime, timedelta
@@ -9,34 +8,36 @@ category = 'Category'
 grocery = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis']
 retailer = 'Description'
 cost = 'Debit'
+myCard = 936
+
+combined = "combined.csv"
+filtered = "filtered.csv"
+categorized = "categorized.csv"
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         try:
+            num_days = request.form['num_days']
             transaction_path = request.form['transaction_path']
-            combined = request.form['output']
-            filtered = request.form['filtered']
-            categorized = request.form['categorized']
 
             input_files = [f for f in os.listdir(transaction_path) if os.path.isfile(os.path.join(transaction_path, f))]
 
             merged_df = merge_csv(transaction_path, input_files, combined)
-            filtered_df = filter_csv_date(merged_df, combined, filtered)
-            categories_df = filter_csv_categories(filtered_df, combined, categorized)
-            result_text = print_data(combined, filtered, categorized, categories_df, filtered_df)
+            filtered_df = filter_date_and_card(num_days, merged_df, filtered)
+            categories_total_df = filter_csv_categories(filtered_df, combined, categorized)
+            grouped_categories = groupby_categories(filtered_df, categories_total_df, categories_total_df.iloc[0, 0])
+            categories_text = print_data(categories_total_df)
+            transactions_text = print_data(filtered_df)
 
-            return render_template('index.html', result_text=result_text, transaction_path=transaction_path,
-                                   combined=combined, filtered=filtered, categorized=categorized)
+            return render_template('index.html', grouped_categories=grouped_categories, categories_text=categories_text, transactions_text=transactions_text, num_days=num_days, transaction_path=transaction_path)
 
         except Exception as e:
-            result_text = f"An error occurred: {str(e)}"
-            return render_template('index.html', result_text=result_text)
+            result_text = f"An error occurred: {str(e)}"    
+            return render_template('index.html', grouped_categories=grouped_categories, categories_text=categories_text, transactions_text=transactions_text)
     else:
         # Default rendering for the initial page load
         return render_template('index.html')
-
-
 
 def merge_csv(transaction_path, input_files, combined):
     dfs = [pd.read_csv(os.path.join(transaction_path, file)) for file in input_files]
@@ -44,33 +45,39 @@ def merge_csv(transaction_path, input_files, combined):
     merged_df.to_csv(combined, index=False)
     return merged_df
 
-def filter_csv_date(merged_df, combined, filtered):
+def filter_date_and_card(num_days, merged_df, filtered):
     date_format = "%Y-%m-%d"
     merged_df.iloc[:, 1] = pd.to_datetime(merged_df.iloc[:, 1], format=date_format)
-    cutoff_date = datetime.now() - timedelta(days=30)
+    cutoff_date = datetime.now() - timedelta(days=int(num_days))
     filtered_df = merged_df[merged_df.iloc[:, 1] >= cutoff_date]
+    filtered_df = filtered_df[filtered_df.iloc[:, 2] == myCard]
     filtered_df.to_csv(filtered, index=False)
     return filtered_df
 
 def filter_csv_categories(filtered_df, combined, categorized):
     filtered_df.loc[filtered_df[retailer].isin(grocery), category] = 'Grocery'
-    categories_df = filtered_df.groupby(category)[cost].sum().reset_index()
-    categories_df.to_csv(categorized, index=False)
-    return categories_df
+    categories_total_df = filtered_df.groupby(category)[cost].sum().reset_index()
+    categories_total_df.to_csv(categorized, index=False)
+    return categories_total_df
 
-def print_data(combined, filtered, categorized, categories_df, filtered_df):
+def groupby_categories(filtered_df, categories_total_df, category):
     result_text = ""
-    for index, row in categories_df.iterrows():
-        category_name = row['Category']
-        total_cost = row['Debit']
-        result_text += f"{category_name.ljust(30)} {total_cost}\n"
+    for i,r in categories_total_df.iterrows():
+        category_df = filtered_df[filtered_df.iloc[:, 4] == category]
+        result_text += f"\n{categories_total_df.iloc[i, 0]}:\n"
+        for index, row in category_df.iterrows():
+            result_text += f"{row[retailer].ljust(30)} {row[cost]}\n"
+        # groupby_categories(filtered_df, categories_total_df, categories_total_df.iloc[i, 0])
+    return result_text
 
-    result_text += f"\nOther Transactions:\n"
-    other_df = filtered_df[filtered_df['Category'].str.contains('Other')]
 
-    for index, row in other_df.iterrows():
-        result_text += f"{row['Description'].ljust(30)} {row['Debit']}\n"
-
+def print_data(dataframe):
+    result_text = ""
+    for index, row in dataframe.iterrows():
+        try:
+            result_text += f"{row[category].ljust(30)} {row[retailer].ljust(30)} {row[cost]}\n"
+        except:
+            result_text += f"{row[category].ljust(30)} {row[cost]}\n"
     return result_text
 
 if __name__ == '__main__':
