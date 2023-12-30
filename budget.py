@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 import pandas as pd
 from datetime import datetime, timedelta
 import os
+from functools import reduce
 
 app = Flask(__name__)
 category = 'Category'
@@ -24,30 +25,33 @@ def index():
 
             input_files = [f for f in os.listdir(transaction_path) if os.path.isfile(os.path.join(transaction_path, f))]
 
-            merged_df = merge_csv(transaction_path, input_files, combined)
-            filtered_df = filter_date_and_card(num_days, merged_df, filtered)
-            categories_total_df = filter_csv_categories(filtered_df, combined, categorized)
+            merged_df = merge_csv(transaction_path, input_files)
+            filtered_df = filter_date_and_card(num_days, merged_df)
+            categories_total_df = filter_csv_categories(filtered_df)
             grouped_categories = groupby_categories(filtered_df, categories_total_df)
             categories_text = print_data(categories_total_df)
             transactions_text = print_data(filtered_df)
             sum_text = filtered_df[cost].sum()
+            date_range_text = str(format_date(filtered_df[date].iloc[-1]) + " - " + format_date(filtered_df[date].iloc[0]))
 
-            return render_template('index.html', sum_text=sum_text, grouped_categories=grouped_categories, categories_text=categories_text, transactions_text=transactions_text, num_days=num_days, transaction_path=transaction_path)
+            return render_template('index.html', date_range_text=date_range_text, sum_text=sum_text, grouped_categories=grouped_categories, categories_text=categories_text, transactions_text=transactions_text, num_days=num_days, transaction_path=transaction_path)
 
         except Exception as e:
             result_text = f"An error occurred: {str(e)}"    
-            return render_template('index.html', sum_text=sum_text, grouped_categories=grouped_categories, categories_text=categories_text, transactions_text=transactions_text)
-    else:
-        # Default rendering for the initial page load
+            return render_template('index.html', date_range_text=date_range_text, sum_text=sum_text, grouped_categories=grouped_categories, categories_text=categories_text, transactions_text=transactions_text)
+    elif request.method == 'GET':
         return render_template('index.html')
 
-def merge_csv(transaction_path, input_files, combined):
+def format_date(date_value):
+    return pd.to_datetime(date_value).strftime('%B %d, %Y')
+
+def merge_csv(transaction_path, input_files):
     dfs = [pd.read_csv(os.path.join(transaction_path, file)) for file in input_files]
-    merged_df = pd.concat(dfs).drop_duplicates()
+    merged_df = pd.concat(dfs).drop_duplicates(subset=[retailer, cost, date])
     merged_df.to_csv(combined, index=False)
     return merged_df
 
-def filter_date_and_card(num_days, merged_df, filtered):
+def filter_date_and_card(num_days, merged_df):
     date_format = "%Y-%m-%d"
     merged_df.iloc[:, 1] = pd.to_datetime(merged_df.iloc[:, 1], format=date_format)
     cutoff_date = datetime.now() - timedelta(days=int(num_days))
@@ -57,9 +61,14 @@ def filter_date_and_card(num_days, merged_df, filtered):
     filtered_df.to_csv(filtered, index=False)
     return filtered_df
 
-def filter_csv_categories(filtered_df, combined, categorized):
-    filtered_df.loc[filtered_df[retailer].isin(grocery), category] = 'Grocery'
-    categories_total_df = filtered_df.groupby(category)[cost].sum().reset_index()
+def filter_csv_categories(filtered_df):
+    for i in grocery:
+        condition_grocery = filtered_df[retailer].str.contains(i, case=False, na=False)
+        condition_not_fuel = ~filtered_df[retailer].str.contains('FUEL', case=False, na=False)
+        if condition_grocery.any() and condition_not_fuel.any():
+            filtered_df.loc[condition_grocery & condition_not_fuel, category] = 'Grocery'
+
+    categories_total_df = filtered_df.groupby(category)[cost].sum().round(2).reset_index()
     categories_total_df.to_csv(categorized, index=False)
     return categories_total_df
 
@@ -71,7 +80,6 @@ def groupby_categories(filtered_df, categories_total_df):
         for index, row in category_df.iterrows():
             result_text += f"{row[retailer].ljust(30)} {row[cost]}\n"
     return result_text
-
 
 def print_data(dataframe):
     result_text = ""
