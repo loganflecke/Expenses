@@ -5,13 +5,18 @@ import os
 from functools import reduce
 
 app = Flask(__name__)
+
+## THESE ARE HEADER NAMES STRAIGHT FROM THE CSV. CHANGE THEM TO FIT YOUR FORMATTING
 category = 'Category'
-grocery = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis']
 retailer = 'Description'
 cost = 'Debit'
 date = 'Transaction Date'
-myCard = 936
+myCard = ## CHANGE TO THE LAST 4 DIGITS OF YOUR CARD
 
+## THESE ARE THE NAMES OF GROCERIES AS THEY APPEAR ON THE TRANSACTIONS CSV FILE
+grocery = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis']
+
+## OUTPUT FILES. FEEL FREE TO REMOVE
 combined = "combined.csv"
 filtered = "filtered.csv"
 categorized = "categorized.csv"
