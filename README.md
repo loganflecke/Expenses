@@ -1,10 +1,10 @@
 # Expenses
 
-**Expenses**
-
 ## Overview
 
 Expenses is a Python tool designed to analyze credit card transactions from CSV files, categorize spending, and provide insights into the user's financial habits. The primary purpose is to help users track and manage their expenses, providing a breakdown of spending across various categories.
+
+![Web Interface](web_interface.jpeg)
 
 ## Features
 
