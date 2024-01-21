@@ -8,7 +8,7 @@ Expenses is a Python tool designed to analyze credit card transactions from CSV 
 
 ## Features
 
-- **Graphical User Interface (GUI):** The `budget.py` file contains a browser-based GUI allowing users to specify the location of their credit card CSV files and the number of past days to include in its analysis.
+- **Graphical User Interface (GUI):** The `expenses.py` file contains a browser-based GUI allowing users to specify the location of their credit card CSV files and the number of past days to include in its analysis.
 
 - **CSV File Operations:**
   - Combine transactions from multiple CSV files into a single CSV file.
@@ -30,7 +30,8 @@ Ensure dependencies are installed:
 Paste the following into the terminal:
 
    ```bash
-   git clone https://github.com/loganflecke/expenses.git
+   git clone https://github.com/loganflecke/Expenses.git
+   cd Expenses
    ```
 
 ## Usage
