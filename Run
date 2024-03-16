@@ -1,13 +1,5 @@
 #!/bin/bash
 
-# Install Git
-echo "Installing Git..."
-if ! command -v git &> /dev/null; then
-    xcode-select --install
-else
-    echo "Git is already installed."
-fi
-
 # Install Python3
 echo "Installing Python3..."
 if ! command -v python3 &> /dev/null; then
