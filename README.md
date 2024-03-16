@@ -23,8 +23,11 @@ Expenses is a Python tool designed to analyze credit card transactions from CSV 
 Open the Terminal application by entering Command + Space Bar and typing "Terminal"
 
 Ensure dependencies are installed:
-  - Git
-  - Python3
+  - Python3 (the Run file will install Python3 if it is not already installed
+  - Install git (takes about 8 minutes but includes a suite of tools commonly used):
+```bash
+xcode-select --install
+```
 
 Paste the following into the terminal:
 
@@ -38,7 +41,6 @@ Paste the following into the terminal:
 1. Run the `Run` file:
 
    ```bash
-   chmod 555 Run
    ./Run
    ```
 
