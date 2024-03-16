@@ -1,1 +1,26 @@
+#!/bin/bash
+
+# Install Git
+echo "Installing Git..."
+if ! command -v git &> /dev/null; then
+    xcode-select --install
+else
+    echo "Git is already installed."
+fi
+
+# Install Python3
+echo "Installing Python3..."
+if ! command -v python3 &> /dev/null; then
+    echo "Downloading Python3 installer..."
+    curl -o python-installer.pkg https://www.python.org/ftp/python/3.9.6/python-3.9.6-macosx10.9.pkg
+    echo "Installing Python3..."
+    sudo installer -pkg python-installer.pkg -target /
+    echo "Python3 installed successfully."
+    rm python-installer.pkg
+else
+    echo "Python3 is already installed."
+fi
+
+echo "Installation complete."
+
 python3 expenses.py
