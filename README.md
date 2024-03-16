@@ -4,20 +4,19 @@
 
 Expenses is a Python tool designed to analyze credit card transactions from CSV files, categorize spending, and provide insights into the user's financial habits. The primary purpose is to help users track and manage their expenses, providing a breakdown of spending across various categories.
 
-![Web Interface](web_interface.jpeg)
+![Web Interface](web_interface.png)
 
 ## Features
 
-- **Graphical User Interface (GUI):** The `expenses.py` file contains a browser-based GUI allowing users to specify the location of their credit card CSV files and the number of past days to include in its analysis.
+- **Graphical User Interface (GUI):** The `expenses.py` file contains a browser-based GUI allowing users to specify the location of their credit card CSV files and the dates to include in their analysis.
 
 - **CSV File Operations:**
   - Combine transactions from multiple CSV files into a single CSV file.
-  - Generate a CSV file containing all transactions filtered for the past number of days.
-  - Create a CSV file displaying money spent in each predefined category (dining, gas, merchandise, grocery, etc.).
 
 - **Total Spending:**
   - Display the total amount spent in each category.
   - Display the overall amount spent during the given period.
+  - Display all the transactions occurring in the specified time span.
 
 ## Installation
 
@@ -44,6 +43,7 @@ Paste the following into the terminal:
    ```
 
 2. Place your CSV file(s) in a directory called Transactions (or a name of your choice) within the Expenses directory that was just created.
+3. Specify the Start and End dates
 
 4. Use the webpage to specify the location of your credit card CSV files (ex: ./Transactions).
 
@@ -54,5 +54,3 @@ Paste the following into the terminal:
 - **Budget Tracking:** Implement a budget tracking feature to compare actual spending against a predefined budget.
 
 - **Visualizations:** Include graphical representations (charts, graphs) to enhance data visualization.
-
-- **Date Range:** Specify the start and end dates of the transactions to include.
