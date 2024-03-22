@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Function to check if a Python package is installed
+is_package_installed() {
+    python3 -c "import $1" &> /dev/null
+}
+
 # Install Python3
 echo "Installing Python3..."
 if ! command -v python3 &> /dev/null; then
@@ -15,4 +20,18 @@ fi
 
 echo "Installation complete."
 
+# Install required Python packages
+echo "Installing required Python packages..."
+if ! is_package_installed pandas; then
+    pip3 install pandas
+fi
+
+if ! is_package_installed openpyxl; then
+    pip3 install openpyxl
+fi
+
+echo "Python packages installed successfully."
+
+# Run expenses.py
+echo "Running expenses.py..."
 python3 expenses.py
