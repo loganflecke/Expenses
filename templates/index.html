@@ -20,28 +20,32 @@
     <div>
         <h2>{{ date_range_text }}</h2>
         <form action="/" method="post">
-            <label for="start_date">Days:</label>
+            <label for="start_date">Start:</label>
             <input type="date" id="start_date" name="start_date" value="{{ start_date }}" required>
             <br>
 
-            <label for="end_date">Days:</label>
+            <label for="end_date">End:</label>
             <input type="date" id="end_date" name="end_date" value="{{ end_date }}" required>
             <br>
     
             <label for="transaction_path">Transaction Directory Path:</label>
             <input type="text" id="transaction_path" name="transaction_path" value="{{ transaction_path }}" required>
             <br>
-    
+
+            <label for="excel">Open in Excel? (Y/N):</label>
+            <input type="text" id="excel" name="excel" value="{{ excel }}" required>
+            <br>
+
             <button type="submit">Continue</button>
         </form>
-        <h2>Total:  {{ sum_text }}</h2>
+        <h2>Total:  {{ total_cost }}</h2>
         <h2>Categories:</h2>
         <pre>{{ categories_text }}</pre>    
     </div>
     <div class="container">
         <div class="column">
             <h2>Grouped By Category:</h2>
-            <pre>{{ grouped_categories }}</pre>    
+            <pre>{{ grouped_categories_text }}</pre>    
         </div>
         <div class="column">
             <h2>Transactions:</h2>
