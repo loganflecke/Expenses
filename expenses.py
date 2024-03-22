@@ -20,18 +20,30 @@ def index():
             start_date = request.form.get('start_date')
             end_date = request.form.get('end_date')
             transaction_path = request.form.get('transaction_path')
+            excel = request.form.get('excel')
 
             input_files = [f for f in os.listdir(transaction_path) if os.path.isfile(os.path.join(transaction_path, f))]
 
             merged_transactions = merge_transactions(transaction_path, input_files)
             filtered_transactions = filter_transaction_by_date(start_date, end_date, merged_transactions)
             categories_summary = summarize_categories(filtered_transactions)
+
             grouped_categories_text = generate_category_group_text(filtered_transactions, categories_summary)
             categories_text = generate_category_text(categories_summary)
             transactions_text = generate_transaction_text(filtered_transactions)
             total_cost = filtered_transactions[cost].sum().round(decimals=2)
             date_range_text = f"{format_date(start_date)} - {format_date(end_date)}"
-            return render_template('index.html', date_range_text=date_range_text, total_cost=total_cost, grouped_categories_text=grouped_categories_text, categories_text=categories_text, transactions_text=transactions_text, start_date=start_date, end_date=end_date, transaction_path=transaction_path)
+
+            if excel == "Y":
+                try:
+                    filtered_transactions.to_excel("transactions.xlsx")
+                except Exception as e:
+                    print("Failed to create Excel file:", e)
+                else:
+                    print("Excel file created successfully.")
+                    
+
+            return render_template('index.html', date_range_text=date_range_text, total_cost=total_cost, grouped_categories_text=grouped_categories_text, categories_text=categories_text, transactions_text=transactions_text, start_date=start_date, end_date=end_date, transaction_path=transaction_path, excel=excel)
 
         except FileNotFoundError as e:
             error_message = f"Error: {str(e)}"
@@ -50,16 +62,9 @@ def merge_transactions(transaction_path, input_files):
     merged_transactions = pd.concat(transaction_dfs).drop_duplicates(subset=[retailer, cost, date])
     return merged_transactions
 
-def filter_transaction_by_date(start_date, end_date, merged_transactions):
-    date_format = "%Y-%m-%d"
-    merged_transactions.iloc[:, 1] = pd.to_datetime(merged_transactions.iloc[:, 1], format=date_format)
-    
-    filtered_transactions = merged_transactions[(merged_transactions.iloc[:, 1] >= pd.to_datetime(start_date)) & 
-                            (merged_transactions.iloc[:, 1] <= pd.to_datetime(end_date))]
-
-    filtered_transactions.iloc[:, 1] = pd.to_datetime(filtered_transactions.iloc[:, 1], format=date_format)
-
-    filtered_transactions = filtered_transactions.sort_values(by=date, ascending=False)
+def filter_transaction_by_date(start_date, end_date, merged_transactions):    
+    filtered_transactions = merged_transactions[(merged_transactions.iloc[:, 0] >= start_date) & 
+                            (merged_transactions.iloc[:, 0] <= end_date)].sort_values(by=date, ascending=False)    
     return filtered_transactions
 
 def summarize_categories(filtered_transactions):
