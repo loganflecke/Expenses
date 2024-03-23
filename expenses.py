@@ -9,7 +9,7 @@ cost = 'Debit'
 date = 'Transaction Date'
 
 ## THESE ARE THE NAMES OF GROCERIES AS THEY APPEAR ON THE TRANSACTIONS CSV FILE
-grocery_keywords = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis']
+grocery_keywords = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis', 'FOOD LION']
 
 app = Flask(__name__)
 
