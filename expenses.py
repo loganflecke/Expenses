@@ -8,6 +8,8 @@ retailer = 'Description'
 cost = 'Debit'
 date = 'Transaction Date'
 
+excel_filename = "transactions.xlsx"
+
 ## THESE ARE THE NAMES OF GROCERIES AS THEY APPEAR ON THE TRANSACTIONS CSV FILE
 grocery_keywords = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis', 'FOOD LION']
 
@@ -26,24 +28,28 @@ def index():
 
             merged_transactions = merge_transactions(transaction_path, input_files)
             filtered_transactions = filter_transaction_by_date(start_date, end_date, merged_transactions)
+            daily_transactions = daily_totals(filtered_transactions, start_date, end_date)
             categories_summary = summarize_categories(filtered_transactions)
 
             grouped_categories_text = generate_category_group_text(filtered_transactions, categories_summary)
             categories_text = generate_category_text(categories_summary)
             transactions_text = generate_transaction_text(filtered_transactions)
             total_cost = filtered_transactions[cost].sum().round(decimals=2)
+            daily_transactions_text = generate_daily_transactions_text(daily_transactions)
             date_range_text = f"{format_date(start_date)} - {format_date(end_date)}"
 
             if excel == "Y":
                 try:
-                    filtered_transactions.to_excel("transactions.xlsx")
+                    with pd.ExcelWriter(excel_filename) as writer:
+                        filtered_transactions.to_excel(writer, sheet_name='Days with Transactions', index=False)  # Write df1 to Sheet1
+                        daily_transactions.to_excel(writer, sheet_name='All Days', index=False)  # Write df2 to Sheet2
                 except Exception as e:
                     print("Failed to create Excel file:", e)
                 else:
                     print("Excel file created successfully.")
                     
 
-            return render_template('index.html', date_range_text=date_range_text, total_cost=total_cost, grouped_categories_text=grouped_categories_text, categories_text=categories_text, transactions_text=transactions_text, start_date=start_date, end_date=end_date, transaction_path=transaction_path, excel=excel)
+            return render_template('index.html', date_range_text=date_range_text, daily_transactions_text=daily_transactions_text, total_cost=total_cost, grouped_categories_text=grouped_categories_text, categories_text=categories_text, transactions_text=transactions_text, start_date=start_date, end_date=end_date, transaction_path=transaction_path, excel=excel)
 
         except FileNotFoundError as e:
             error_message = f"Error: {str(e)}"
@@ -77,6 +83,39 @@ def summarize_categories(filtered_transactions):
     categories_summary = filtered_transactions.groupby(category)[cost].sum().round(2).reset_index()
     return categories_summary
 
+def daily_totals(df, start, end):
+    global date, cost
+    start = pd.to_datetime(start)
+    end = pd.to_datetime(end)
+
+    date_range_df = pd.DataFrame({date: pd.date_range(start=start, end=end, freq='D')})
+    date_range_df[date] = date_range_df[date].dt.date
+    df[cost] = df[cost].fillna(0)
+
+    df['Count'] = 0
+    date_range_df[cost] = float('nan')
+    date_range_df['Count'] = 0
+
+    for index, row in df.iterrows():
+        for i, r in date_range_df.iterrows():
+            if str(row[date]) == str(r[date]):
+                date_range_df.at[i, 'Count'] += 1
+                if pd.isna(date_range_df.at[i, cost]):
+                    date_range_df.at[i, cost] = row[cost]
+                else:
+                    date_range_df.at[i, cost] += row[cost]
+                    date_range_df.at[i, cost] = date_range_df.at[i, cost].round(decimals=2)
+                break
+    date_range_df[cost] = date_range_df[cost].fillna(0)   
+
+    return date_range_df
+
+def generate_daily_transactions_text(daily_transactions):
+    result_text = "Date > Total Spent > Transaction Count\n"
+    for i, row in daily_transactions.iterrows():
+        result_text += f"{str(row['Transaction Date']).ljust(30)} {str(row['Debit']).ljust(20)} {str(row['Count'])}\n"
+    return result_text
+    
 def generate_category_group_text(filtered_transactions, categories_summary):
     result_text = ""
     for i, category_row in categories_summary.iterrows():
@@ -93,7 +132,7 @@ def generate_category_text(categories_summary):
     return result_text
 
 def generate_transaction_text(filtered_transactions):
-    result_text = ""
+    result_text = "Date > Category > Retailer > Cost\n"
     for index, row in filtered_transactions.iterrows():
         try:
             result_text += f"{row[date].ljust(20)} {row[category].ljust(20)} {row[retailer].ljust(30)} {row[cost]}\n"
