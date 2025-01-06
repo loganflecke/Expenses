@@ -11,7 +11,7 @@ date = 'Transaction Date'
 excel_filename = "transactions.xlsx"
 
 ## THESE ARE THE NAMES OF GROCERIES AS THEY APPEAR ON THE TRANSACTIONS CSV FILE
-grocery_keywords = ['KROGER', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis', 'FOOD LION']
+grocery_keywords = ['KROGER', 'GIANT', 'wholefoods', 'traderjoes', 'gianteagle', 'aldis', 'FOOD LION']
 
 app = Flask(__name__)
 
